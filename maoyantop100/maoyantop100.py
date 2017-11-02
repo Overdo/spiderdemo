@@ -4,8 +4,19 @@ import timeit
 import re
 from requests.exceptions import RequestException
 import json
-from multiprocessing import Pool, Lock, Queue
-import os
+from config import *
+import pymongo
+
+'''
+
+抓取猫眼电影top100榜单并保存到文件
+
+'''
+
+client = pymongo.MongoClient(MONGO_URL, connect=False)
+db = client[MONGO_DB]
+
+
 
 def get_one_page(url):
     header = {
@@ -44,12 +55,19 @@ def write_to_file(content):
         f.close()
 
 
+def save_to_mongodb(content):
+    if db[MONGO_TABLE].insert(content):
+        print('Successfully Saved to Mongo', content)
+        return True
+    return False
+
+
 def main(offset):
     url = 'http://maoyan.com/board/4?offset=' + str(offset)
     html = get_one_page(url)
     for item in parse_one_page(html):
-        write_to_file(item)
-
+        # write_to_file(item)
+        save_to_mongodb(item)
 
 
 
